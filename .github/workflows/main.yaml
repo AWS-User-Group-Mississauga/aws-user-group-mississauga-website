@@ -1,0 +1,107 @@
+name: Validate & Deploy Website
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  push:
+    branches:
+      - main
+    
+defaults:
+  run:
+    working-directory: ./infra
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  #Scan infra      
+  scan-infra:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+      models: read
+      security-events: write
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+       
+      - name: 'Set up Node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: infra/package-lock.json
+      
+      - name: 'Install dependencies'
+        run: |
+          npm ci
+
+      - name: 'Validate stack'
+        run: |
+          npx cdk synth --all
+        
+      - name: 'Security Scan with AI SSDLC security suite'
+        uses: subzone/ssdlc-action@v1.3.0
+        with: 
+          github-token: ${{ github.token }}
+          ai-provider: github
+          severity-threshold: medium
+          enable-iac-scan: true
+          enable-sast: true
+          enable-sca: false
+          fail-on-findings: false
+          enable-secret-scan: true
+          enable-ai-triage: true
+          enable-ai-fix-suggestions: true
+          sarif-upload: true
+          
+      - name: 'Comment on PR'
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+             body: 'Infra scan finished!'
+            }) 
+          
+  #Deploy     
+  deploy:
+    if: github.event_name == 'push' 
+    needs: scan-infra
+    runs-on: ubuntu-latest
+    environment: production
+    steps: 
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        
+      - name: 'Configure AWS creds'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{vars.AWS_DEPLOY_ROLE_ARN}}
+          aws-region: 'ca-central-1'
+        
+      - name: 'Set up Node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: infra/package-lock.json
+      
+      - name: 'Install dependencies'
+        run: |
+          npm ci
+    
+      - name: 'Deploy stacks'
+        run: |
+          npx cdk deploy --all --require-approval never
+    
+  
+  
