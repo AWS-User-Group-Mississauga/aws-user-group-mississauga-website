@@ -8,7 +8,7 @@
     ]
   },
   "context": {
-    "alertEmail": "awsmississuagausergroup@gmail.com",
+    "alertEmail": "",
     "formsEmail": "",
     "formsFromEmail": "",
     "formsKeepDays": "365",
