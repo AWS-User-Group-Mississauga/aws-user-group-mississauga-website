@@ -13,7 +13,7 @@
     "formsFromEmail": "",
     "formsKeepDays": "365",
     "monthlyBudgetUsd": "20",
-    "githubRepo": "",
+    "githubRepo": "AWS-User-Group-Mississauga/aws-user-group-mississauga-website",
     "githubOidcProviderArn": "",
     "domainName": "",
     "certificateArn": "",
