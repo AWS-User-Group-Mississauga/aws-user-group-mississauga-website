@@ -3,7 +3,7 @@ import { Construct } from 'constructs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 export interface GitHubDeployStackProps extends StackProps {
-  /** "owner/repo" on GitHub. */
+  /** "owner/repo" on GitHub, or "owner@id/repo@id" if GitHub's OIDC subject includes IDs. */
   githubRepo: string;
   /** Set this if the account already has the GitHub OIDC provider (an account can only have one). */
   existingProviderArn?: string;
@@ -18,8 +18,9 @@ export class GitHubDeployStack extends Stack {
   constructor(scope: Construct, id: string, props: GitHubDeployStackProps) {
     super(scope, id, props);
 
-    if (!/^[\w.-]+\/[\w.-]+$/.test(props.githubRepo)) {
-      throw new Error(`githubRepo must look like "owner/repo", got "${props.githubRepo}".`);
+    // GitHub may add immutable IDs to the OIDC subject: "owner@123/repo@456".
+    if (!/^[\w.-]+(@\d+)?\/[\w.-]+(@\d+)?$/.test(props.githubRepo)) {
+      throw new Error(`githubRepo must look like "owner/repo" or "owner@id/repo@id", got "${props.githubRepo}".`);
     }
 
     const provider = props.existingProviderArn
