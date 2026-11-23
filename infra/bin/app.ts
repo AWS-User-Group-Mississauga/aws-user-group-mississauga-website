@@ -48,7 +48,7 @@ new HostingStack(app, `AwsMississaugaHosting${suffix}`, {
 // AWS Budgets is a global service; the stack lives in us-east-1 alongside other account-wide billing settings.
 const alertEmail = ctx('alertEmail');
 if (alertEmail) {
-  new BudgetStack(app, `AwsMississaugaBudget${prNumber}`, {
+  new BudgetStack(app, `AwsMississaugaBudget${suffix}`, {
     env: { account, region: 'us-east-1' },
     description: 'AWS User Group Mississauga: monthly cost budget and email alerts',
     alertEmail,
