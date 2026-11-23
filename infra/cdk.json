@@ -8,13 +8,14 @@
     ]
   },
   "context": {
-    "alertEmail": "awsmississuagausergroup@gmail.com",
+    "prNumber": "",
+    "alertEmail": "",
     "formsEmail": "",
     "formsFromEmail": "",
     "formsKeepDays": "365",
     "monthlyBudgetUsd": "20",
     "githubRepo": "AWS-User-Group-Mississauga@357588263/aws-user-group-mississauga-website@1460700453",
-    "githubOidcProviderArn": "",
+    "githubOidcProviderArn": "arn:aws:iam::840154382316:role/aws-mississauga-github-deploy",
     "domainName": "",
     "certificateArn": "",
     "hostedZoneId": "",
