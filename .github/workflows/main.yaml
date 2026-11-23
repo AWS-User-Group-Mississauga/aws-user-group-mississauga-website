@@ -19,10 +19,11 @@ permissions:
   contents: read
 
 jobs:
-  #validate infra in PR
+  #validate infra on PR opened/sync
   validate-pr:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
+    environment: preview
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v4
@@ -30,7 +31,7 @@ jobs:
       - name: 'Configure AWS creds'
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{vars.AWS_DEPLOY_ROLE_ARN}}
+          role-to-assume: ${{ vars.AWS_DEPLOY_PREVIEW_ROLE_ARN }}
           aws-region: 'ca-central-1'
         
       - name: 'Set up Node'
@@ -46,7 +47,7 @@ jobs:
       
       - name: 'Validate stack'
         run: |
-          npx cdk synth --all -c pr=${{ github.event.pull_request.number}}
+          npx cdk synth --all -c prNumber=${{ github.event.pull_request.number}}
           
               
       - name: 'Security Scan with AI SSDLC security suite'
@@ -66,7 +67,7 @@ jobs:
       
       - name: 'Deploy PR stacks'
         run: |
-          npx cdk deploy --all -c pr=${{ github.event.pull_request.number}} --require-approval never
+          npx cdk deploy --all -c prNumber=${{ github.event.pull_request.number}} --require-approval never
           
       - name: 'Comment on PR'
         if: github.event_name == 'pull_request'
@@ -79,6 +80,38 @@ jobs:
             repo: context.repo.repo,
              body: 'Infra validated!'
             })
+
+  #Destroy PR stack on PR close
+  destroy-pr-stack:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    environment: preview
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        
+      - name: 'Configure AWS creds'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_PREVIEW_ROLE_ARN }}
+          aws-region: 'ca-central-1'
+        
+      - name: 'Set up Node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: infra/package-lock.json
+      
+      - name: 'Install dependencies'
+        run: |
+          npm ci
+
+      - name: 'Destroy PR test stacks'
+        run: |
+          npx cdk destroy --all -c prNumber=${{ github.event.pull
+      
+    
          
   #Deploy     
   deploy:
@@ -106,10 +139,6 @@ jobs:
       - name: 'Install dependencies'
         run: |
           npm ci
-
-      - name: 'Destroy PR test stacks'
-        run: |
-          npx cdk destroy --all -c pr=${{ github.event.pull_request.number}} --require-approval never
     
       - name: 'Deploy stacks'
         run: |
