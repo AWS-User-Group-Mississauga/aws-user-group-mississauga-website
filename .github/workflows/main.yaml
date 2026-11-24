@@ -47,7 +47,7 @@ jobs:
       
       - name: 'Validate stack'
         run: |
-          npx cdk synth --all -c prNumber=${{ github.event.pull_request.number}}
+          npx cdk synth -c prNumber=${{ github.event.pull_request.number}}
           
               
       - name: 'Security Scan with AI SSDLC security suite'
