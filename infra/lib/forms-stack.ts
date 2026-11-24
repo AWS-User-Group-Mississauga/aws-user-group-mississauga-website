@@ -17,7 +17,7 @@ export interface FormsStackProps extends StackProps {
   /** How long submissions are kept in the table before they're deleted automatically. */
   keepDays: number;
   
-  retainData: Boolean
+  retainData: boolean
 }
 
 /**
