@@ -121,7 +121,7 @@ jobs:
   #Deploy     
   deploy:
     if: github.event_name == 'push' 
-    needs: validate-pr
+    needs: destroy-pr-stack
     runs-on: ubuntu-latest
     environment: production
     steps: 

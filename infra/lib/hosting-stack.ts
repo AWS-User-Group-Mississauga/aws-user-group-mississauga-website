@@ -39,7 +39,7 @@ export class HostingStack extends Stack {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
       enforceSSL: true,
-      versioned: true,
+      versioned: props.retainData ? true : false,
       removalPolicy: props.retainData? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
       lifecycleRules: [{ noncurrentVersionExpiration: Duration.days(30) }],
     });
