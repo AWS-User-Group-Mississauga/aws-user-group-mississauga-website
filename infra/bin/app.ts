@@ -56,14 +56,15 @@ if (alertEmail) {
   });
 }
 
-const githubRepo = ctx('githubRepo');
-if (githubRepo) {
-  new GitHubDeployStack(app, `AwsMississaugaGitHubDeploy${suffix}`, {
-    env: { account, region },
-    description: 'AWS User Group Mississauga: GitHub Actions deploy role (OIDC, no stored keys)',
-    githubRepo,
-    existingProviderArn: ctx('githubOidcProviderArn'),
-  });
-}
+//deploying only in terminal
+// const githubRepo = ctx('githubRepo');
+// if (githubRepo) {
+//   new GitHubDeployStack(app, 'AwsMississaugaGitHubDeploy', {
+//     env: { account, region },
+//     description: 'AWS User Group Mississauga: GitHub Actions deploy role (OIDC, no stored keys)',
+//     githubRepo,
+//     existingProviderArn: ctx('githubOidcProviderArn'),
+//   });
+// }
 
 Tags.of(app).add('project', 'aws-mississauga-website');
