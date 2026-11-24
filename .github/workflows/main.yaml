@@ -114,7 +114,7 @@ jobs:
 
       - name: 'Destroy PR test stacks'
         run: |
-          npx cdk destroy --all -c prNumber=${{ github.event.pull_request.number }} --require-approval never
+          npx cdk destroy --all -c prNumber=${{ github.event.pull_request.number }} --force
       
     
          
