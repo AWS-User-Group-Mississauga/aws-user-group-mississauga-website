@@ -29,6 +29,7 @@ const forms = formsEmail
       toEmail: formsEmail,
       fromEmail: ctx('formsFromEmail'),
       keepDays: Number(ctx('formsKeepDays') ?? '365'),
+      retainData: prNumber ? false : true
     })
   : undefined;
 
@@ -43,6 +44,7 @@ new HostingStack(app, `AwsMississaugaHosting${suffix}`, {
   certificateArn: ctx('certificateArn'),
   hostedZone: hostedZoneId && hostedZoneName ? { id: hostedZoneId, name: hostedZoneName } : undefined,
   formsApiDomain: forms?.apiDomain,
+  retainData: prNumber ? false : true
 });
 
 // AWS Budgets is a global service; the stack lives in us-east-1 alongside other account-wide billing settings.
