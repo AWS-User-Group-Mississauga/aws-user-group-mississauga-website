@@ -20,6 +20,8 @@ export interface HostingStackProps extends StackProps {
   hostedZone?: { id: string; name: string };
   /** API Gateway domain from FormsStack. When set, /api/* goes there and the site's forms send for real. */
   formsApiDomain?: string;
+  
+  retainData: Boolean
 }
 
 /** Private S3 bucket served only through CloudFront over HTTPS. */
@@ -38,7 +40,7 @@ export class HostingStack extends Stack {
       encryption: s3.BucketEncryption.S3_MANAGED,
       enforceSSL: true,
       versioned: true,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: props.retainData? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
       lifecycleRules: [{ noncurrentVersionExpiration: Duration.days(30) }],
     });
 

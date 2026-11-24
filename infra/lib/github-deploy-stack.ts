@@ -29,6 +29,18 @@ export class GitHubDeployStack extends Stack {
           url: 'https://token.actions.githubusercontent.com',
           clientIds: ['sts.amazonaws.com'],
         });
+        
+    const previewEnvDeployRole = new iam.Role(this, 'GitHubDeployRoleForPreview', {
+      roleName: 'aws-mississauga-github-deploy-preview',
+      description: `GitHub Actions preview deploys for ${props.githubRepo}`,
+      maxSessionDuration: Duration.hours(1),
+      assumedBy: new iam.WebIdentityPrincipal(provider.openIdConnectProviderArn, {
+        StringEquals: {
+          'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+          'token.actions.githubusercontent.com:sub': `repo:${props.githubRepo}:environment:preview`,
+        },
+      }),
+    });
 
     const role = new iam.Role(this, 'GitHubDeployRole', {
       roleName: 'aws-mississauga-github-deploy',
@@ -41,12 +53,22 @@ export class GitHubDeployStack extends Stack {
         },
       }),
     });
+    
+    previewEnvDeployRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['sts:AssumeRole'],
+      resources: [`arn:${this.partition}:iam::${this.account}:role/cdk-hnb659fds-*`],
+    }));
 
     role.addToPolicy(new iam.PolicyStatement({
       actions: ['sts:AssumeRole'],
       resources: [`arn:${this.partition}:iam::${this.account}:role/cdk-hnb659fds-*`],
     }));
 
+    new CfnOutput(this, 'DeployPreviewRoleArn', {
+      value: previewEnvDeployRole.roleArn,
+      description: 'Save this as the AWS_PREVIEW_DEPLOY_ROLE_ARN variable in the GitHub repo',
+    });
+    
     new CfnOutput(this, 'DeployRoleArn', {
       value: role.roleArn,
       description: 'Save this as the AWS_DEPLOY_ROLE_ARN variable in the GitHub repo',

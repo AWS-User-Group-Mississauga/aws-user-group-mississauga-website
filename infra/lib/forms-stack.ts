@@ -16,6 +16,8 @@ export interface FormsStackProps extends StackProps {
   fromEmail?: string;
   /** How long submissions are kept in the table before they're deleted automatically. */
   keepDays: number;
+  
+  retainData: Boolean
 }
 
 /**
@@ -46,7 +48,7 @@ export class FormsStack extends Stack {
       billing: dynamodb.Billing.onDemand(),
       timeToLiveAttribute: 'expiresAt',
       pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: props.retainData ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
     });
 
     const fn = new lambda.Function(this, 'SubmitFunction', {

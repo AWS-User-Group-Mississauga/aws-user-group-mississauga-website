@@ -17,23 +17,26 @@ const ctx = (key: string): string | undefined => {
 const account = process.env.CDK_DEFAULT_ACCOUNT;
 // All website data stays in Canada.
 const region = 'ca-central-1';
+const prNumber = ctx('prNumber');
+const suffix = prNumber ? `-pr${prNumber}` : "";
 
 // Website forms. Leave formsEmail empty and the forms stay in preview mode.
 const formsEmail = ctx('formsEmail');
 const forms = formsEmail
-  ? new FormsStack(app, 'AwsMississaugaForms', {
+  ? new FormsStack(app, `AwsMississaugaForms${suffix}`, {
       env: { account, region },
       description: 'AWS User Group Mississauga website: form API, submissions table and email alerts',
       toEmail: formsEmail,
       fromEmail: ctx('formsFromEmail'),
       keepDays: Number(ctx('formsKeepDays') ?? '365'),
+      retainData: prNumber ? false : true
     })
   : undefined;
 
 const hostedZoneId = ctx('hostedZoneId');
 const hostedZoneName = ctx('hostedZoneName');
 
-new HostingStack(app, 'AwsMississaugaHosting', {
+new HostingStack(app, `AwsMississaugaHosting${suffix}`, {
   env: { account, region },
   description: 'AWS User Group Mississauga website: S3 + CloudFront hosting',
   siteDir: path.join(__dirname, '..', '..', 'site'),
@@ -41,12 +44,13 @@ new HostingStack(app, 'AwsMississaugaHosting', {
   certificateArn: ctx('certificateArn'),
   hostedZone: hostedZoneId && hostedZoneName ? { id: hostedZoneId, name: hostedZoneName } : undefined,
   formsApiDomain: forms?.apiDomain,
+  retainData: prNumber ? false : true
 });
 
 // AWS Budgets is a global service; the stack lives in us-east-1 alongside other account-wide billing settings.
 const alertEmail = ctx('alertEmail');
 if (alertEmail) {
-  new BudgetStack(app, 'AwsMississaugaBudget', {
+  new BudgetStack(app, `AwsMississaugaBudget${suffix}`, {
     env: { account, region: 'us-east-1' },
     description: 'AWS User Group Mississauga: monthly cost budget and email alerts',
     alertEmail,
@@ -54,8 +58,10 @@ if (alertEmail) {
   });
 }
 
+
 const githubRepo = ctx('githubRepo');
-if (githubRepo) {
+
+if (githubRepo && !prNumber) {
   new GitHubDeployStack(app, 'AwsMississaugaGitHubDeploy', {
     env: { account, region },
     description: 'AWS User Group Mississauga: GitHub Actions deploy role (OIDC, no stored keys)',

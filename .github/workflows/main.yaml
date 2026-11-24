@@ -2,6 +2,7 @@ name: Validate & Deploy Website
 
 on:
   pull_request:
+    types: [opened, synchronize, closed]
     branches:
       - main
 
@@ -18,18 +19,27 @@ permissions:
   contents: read
 
 jobs:
-  #Scan infra      
-  scan-infra:
+  #validate infra on PR opened/sync
+  validate-pr:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
+    environment: preview
     permissions:
-      pull-requests: write
+      id-token: write
       contents: read
-      models: read
       security-events: write
+      pull-requests: write
+      models: read
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v4
-       
+        
+      - name: 'Configure AWS creds'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_PREVIEW_ROLE_ARN }}
+          aws-region: 'ca-central-1'
+        
       - name: 'Set up Node'
         uses: actions/setup-node@v4
         with:
@@ -40,11 +50,12 @@ jobs:
       - name: 'Install dependencies'
         run: |
           npm ci
-
+      
       - name: 'Validate stack'
         run: |
-          npx cdk synth --all
-        
+          npx cdk synth -c prNumber=${{ github.event.pull_request.number}}
+          
+              
       - name: 'Security Scan with AI SSDLC security suite'
         uses: subzone/ssdlc-action@v1.3.0
         with: 
@@ -58,10 +69,13 @@ jobs:
           enable-secret-scan: true
           enable-ai-triage: true
           enable-ai-fix-suggestions: true
-          sarif-upload: true
+          sarif-upload: true 
+      
+      - name: 'Deploy PR stacks'
+        run: |
+          npx cdk deploy --all -c prNumber=${{ github.event.pull_request.number}} --require-approval never
           
       - name: 'Comment on PR'
-        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
@@ -69,13 +83,45 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-             body: 'Infra scan finished!'
-            }) 
-          
+            body: 'Infra validated!'
+            })
+
+  #Destroy PR stack on PR close
+  destroy-pr-stack:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    environment: preview
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        
+      - name: 'Configure AWS creds'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_PREVIEW_ROLE_ARN }}
+          aws-region: 'ca-central-1'
+        
+      - name: 'Set up Node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: infra/package-lock.json
+      
+      - name: 'Install dependencies'
+        run: |
+          npm ci
+
+      - name: 'Destroy PR test stacks'
+        run: |
+          npx cdk destroy --all -c prNumber=${{ github.event.pull_request.number }} --require-approval never
+      
+    
+         
   #Deploy     
   deploy:
     if: github.event_name == 'push' 
-    needs: scan-infra
+    needs: validate-pr
     runs-on: ubuntu-latest
     environment: production
     steps: 
