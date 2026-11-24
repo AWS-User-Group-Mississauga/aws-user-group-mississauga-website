@@ -24,6 +24,12 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     environment: preview
+    permissions:
+      id-token: write
+      contents: read
+      security-events: write
+      pull-requests: write
+      models: read
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v4
