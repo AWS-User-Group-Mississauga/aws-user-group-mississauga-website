@@ -58,7 +58,7 @@ if (alertEmail) {
 
 const githubRepo = ctx('githubRepo');
 if (githubRepo) {
-  new GitHubDeployStack(app, 'AwsMississaugaGitHubDeploy', {
+  new GitHubDeployStack(app, `AwsMississaugaGitHubDeploy${suffix}`, {
     env: { account, region },
     description: 'AWS User Group Mississauga: GitHub Actions deploy role (OIDC, no stored keys)',
     githubRepo,
